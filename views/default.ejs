@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><% include partials/page/head.ejs %></head>
+<body>
+	<div class="container">
+		<h1><%=title%></h1>
+		<p>Got a response, n.o. points: <%=points.length%></p>
+		<p><%=columns.toString()%></p>
+		<ul>
+			<%for(var i = 0; i < points.length; i++){%>
+			<li><%=points[i].toString()%></li>
+			<%}%>
+		</ul>
+	</div><!-- container -->
+	
+	<% include partials/page/jsdefaults.ejs%>
+</body>
+</html>
