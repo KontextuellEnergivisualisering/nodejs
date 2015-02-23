@@ -39,7 +39,6 @@ app.get('/', function(req, res){
 			io.sockets.emit('mqtt',{'topic':String(topic),'payload':String(message)});
 		});
 
-
 		//GOT A RESPONSE
 		var columns = data[0].columns;
 		var points = data[0].points;
@@ -47,7 +46,8 @@ app.get('/', function(req, res){
 		res.render('default', {
 			title: 'Visualization graph',
 			columns: columns,
-			points: points
+			points: points,
+			data: data[0]
 		});
 	});
 });
