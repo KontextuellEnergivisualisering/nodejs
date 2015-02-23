@@ -9,10 +9,10 @@ window.onload = function() {
 	});
 
 	console.log(historicalData);
+	console.log(historicalData.points[0]);
 
 	// dataPoints
 	var dataPoints1 = [];
-	var dataPoints2 = [];
 
 	var chart = new CanvasJS.Chart("chartContainer",{
 		zoomEnabled: true,
@@ -43,14 +43,6 @@ window.onload = function() {
 				showInLegend: true,
 				name: "Sensor A",
 				dataPoints: dataPoints1
-			},
-			{				
-				// dataSeries2
-				type: "line",
-				xValueType: "dateTime",
-				showInLegend: true,
-				name: "Sensor B" ,
-				dataPoints: dataPoints2
 			}],
 			legend:{
 				cursor:"pointer",
@@ -66,60 +58,30 @@ window.onload = function() {
 			}
 		});
 
-
-
 		var updateInterval = 3000;
-		// initial value
-		var yValue1 = 640; 
-		var yValue2 = 604;
+		
+		for (var i = 0; i < historicalData.points.length; i++) {
+			
+			var point = historicalData.points[i];
 
-		var time = new Date;
-		time.setHours(9);
-		time.setMinutes(30);
-		time.setSeconds(00);
-		time.setMilliseconds(00);
-		// starting at 9.30 am
+			var time = new Date()
+			time.setUTCMilliseconds(point[0]);
 
-		var updateChart = function (count) {
-			count = count || 1;
-
-			// count is number of times loop runs to generate random dataPoints. 
-
-			for (var i = 0; i < count; i++) {
-				
-				// add interval duration to time				
-				time.setTime(time.getTime()+ updateInterval);
-
-
-				// generating random values
-				var deltaY1 = .5 + Math.random() *(-.5-.5);
-				var deltaY2 = .5 + Math.random() *(-.5-.5);
-
-				// adding random value and rounding it to two digits. 
-				yValue1 = Math.round((yValue1 + deltaY1)*100)/100;
-				yValue2 = Math.round((yValue2 + deltaY2)*100)/100;
-				
-				// pushing the new values
-				dataPoints1.push({
-					x: time.getTime(),
-					y: yValue1
-				});
-				dataPoints2.push({
-					x: time.getTime(),
-					y: yValue2
-				});
-
-
-			};
-
-			// updating legend text with  updated with y Value 
-			chart.options.data[0].legendText = "Sensor A: " + yValue1;
-			chart.options.data[1].legendText = "Sensor B: " + yValue2; 
-
-			chart.render();
+			// pushing the new values
+			dataPoints1.push({
+				x: time.getTime(),
+				y: point[2]
+			});
 
 		};
 
+
+		// updating legend text with  updated with y Value 
+		chart.options.data[0].legendText = "Sensor A: " + historicalData.points[historicalData.points.length-1][2];
+		
+		chart.render();
+
+		
 		// generates first set of dataPoints 
 		updateChart(3000);	
 

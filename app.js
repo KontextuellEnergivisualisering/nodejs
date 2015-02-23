@@ -47,7 +47,7 @@ app.get('/', function(req, res){
 			title: 'Visualization graph',
 			columns: columns,
 			points: points,
-			data: 400 //TODO: ersätt med data
+			data: data[0]
 		});
 	});
 });
