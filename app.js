@@ -35,48 +35,6 @@ app.use(function(err, req, res, next) {
         message: err.message,
         error: {}
     });
-<<<<<<< HEAD
-=======
-var client 	= influx({
-	host: 'localhost',
-	port: 8086,
-	username: 'root',
-	password: 'root',
-	database: 'Munktell'
-})
-var query = 'select * from "Testsites/MunktellSiencePark/mainmeter/meterevent" limit 100;';
-
-app.set('view engine', 'ejs');
-app.locals.pageTitle = "Energy context awareness";
-app.use(express.static(__dirname + '/public'));
-
-app.get('/', function(req, res){
-	client.query(query, function(err, data){
-		if(err!=null){
-			res.send('there was an error\n');
-			console.log(err);
-		}
-		
-		//GOT A RESPONSE
-		var columns = data[0].columns;
-		var points = data[0].points;
-
-		res.render('default', {
-			title: 'Visualization graph',
-			columns: columns,
-			points: points,
-			data: JSON.stringify(data[0])
-		});
-	});
-});
-
-
-
-app.get('*', function(req, res){
-	res.send('Bad route');
->>>>>>> bugix: socket disconnect, graph push
-=======
->>>>>>> Resolving merge conflicts
 });
 
 var server = app.listen(port, function(){
