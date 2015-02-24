@@ -1,19 +1,10 @@
+var dataPoints1 = [];
+
 window.onload = function() {
 
-	var socket = io.connect('http://localhost:8000');
-	socket.on('mqtt', function (data) {
-		if(data.topic == 'Testsites/MunktellSiencePark/mainmeter/meterevent'){
-			var parsedData = JSON.parse(data.payload);
-			console.log(parsedData.power);
-		}
-	});
-
-	console.log(historicalData);
-	console.log(historicalData.points[0]);
-
+	//METHODS FOR CHART
 	// dataPoints
-	var dataPoints1 = [];
-
+	
 	var chart = new CanvasJS.Chart("chartContainer",{
 		zoomEnabled: true,
 		title: {
@@ -31,14 +22,14 @@ window.onload = function() {
 				fontColor: "dimGrey"
 			},
 			axisX: {
-				title: "Update frequency: 3s"
+				title: "Power consumption"
 			},
 			axisY:{
 				includeZero: false
 			}, 
 			data: [{ 
 				// dataSeries1
-				type: "area",
+				type: "line",
 				xValueType: "dateTime",
 				showInLegend: true,
 				name: "Sensor A",
@@ -58,33 +49,49 @@ window.onload = function() {
 			}
 		});
 
-		var updateInterval = 3000;
-		
 		for (var i = 0; i < historicalData.points.length; i++) {
 			
-			var point = historicalData.points[i];
+			var point = historicalData.points[historicalData.points.length - 1 - i];
 
 			var time = new Date()
-			time.setUTCMilliseconds(point[0]);
-
+			time.setTime(point[0]);
+			
 			// pushing the new values
 			dataPoints1.push({
-				x: time.getTime(),
-				y: point[2]
+				x: time,
+				y: Math.round(point[2])
 			});
 
 		};
 
-
 		// updating legend text with  updated with y Value 
 		chart.options.data[0].legendText = "Sensor A: " + historicalData.points[historicalData.points.length-1][2];
-		
 		chart.render();
 
-		
-		// generates first set of dataPoints 
-		//updateChart(3000);	
+		//SOCKET.IO METHODS
+		var socket = io.connect('http://localhost:8000');
+		socket.on('mqtt', function (data) {
+			if(data.topic == 'Testsites/MunktellSiencePark/mainmeter/meterevent'){
 
-		// update chart after specified interval
-		//setInterval(function(){updateChart()}, updateInterval);
+				var parsedData = JSON.parse(data.payload);
+				//console.log(JSON.stringify(parsedData));
+
+				time = new Date()
+				time.setTime(parsedData.time * 1000);
+				var yVal =  Math.round(Number(parsedData.power));
+
+				console.log('rec');
+
+				dataPoints1.push({
+					x: time.getTime(),
+					y: yVal
+				});
+
+
+
+				chart.options.data[0].legendText = "Sensor A: " + yVal;
+
+				chart.render();
+			}
+		});
 }
