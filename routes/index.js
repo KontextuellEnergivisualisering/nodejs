@@ -14,7 +14,7 @@ var client 	= influx({
 var query = 'select * from "Testsites/MunktellSiencePark/mainmeter/meterevent" limit 100';
 
 /* GET home page. */
-router.get('/', function(req, res, next) {
+router.get('/', function(req, res) {
   client.query(query, function(err, data){
 		if(err!=null){
 			res.send('there was an error\n');
@@ -30,7 +30,7 @@ router.get('/', function(req, res, next) {
 			title: 'Visualization graph',
 			columns: columns,
 			points: points,
-			data: data[0]
+			data: JSON.stringify(data[0])
 		});
 	});
 });

@@ -2,23 +2,19 @@ var socket 	= require('socket.io');		//Socket.io used for real-time engine
 var mqtt 	= require('mqtt');			//Used for subscribing to MQTT-broakers
 
 var express = require('express')		//Express.js web-framwork
-	, routes = require('./routes');		//Require routes from 
-
+	, routes = require('./routes/index');		//Require routes from 
 
 var app 	= express();
 var port 	= 8000;
-<<<<<<< HEAD
 
-app.configure(function(){
-	app.set('views', __dirname + '/views');
-  	app.set('view engine', 'ejs');	
-	app.locals.pageTitle = "Energy context awareness";
-	app.use(express.static(__dirname + '/public'));
-	app.use(app.router);
-});
+app.set('views', __dirname + '/views');
+app.set('view engine', 'ejs');	
+app.locals.pageTitle = "Energy context awareness";
+app.use(express.static(__dirname + '/public'));
+//app.use(app.routes);
 
 //Routing
-app.use('/', routes.index);
+app.use('/', routes);
 
 /******************/
 // error handlers //
@@ -39,6 +35,7 @@ app.use(function(err, req, res, next) {
         message: err.message,
         error: {}
     });
+<<<<<<< HEAD
 =======
 var client 	= influx({
 	host: 'localhost',
@@ -78,6 +75,8 @@ app.get('/', function(req, res){
 app.get('*', function(req, res){
 	res.send('Bad route');
 >>>>>>> bugix: socket disconnect, graph push
+=======
+>>>>>>> Resolving merge conflicts
 });
 
 var server = app.listen(port, function(){
