@@ -1,5 +1,5 @@
 var dataPoints1 = [];
-var serieNames = ["Mainmeter"];
+var serieNames = ["Mainmeter", "Average"];
 var max = {
 	val: Number.MIN_VALUE,
 	arraypos: null
@@ -8,11 +8,30 @@ var min = {
 	val: Number.MAX_VALUE,
 	arraypos: null
 }
+var total = 0;
+var averagePoints = [{
+		x: null,
+		y: null
+	},
+	{
+		x: null,
+		y: null
+	}];
 
 function removeMarker(pos)
 {
-	// First found min/max it tries removing markers on objects that do not exist. Lets not.
-	if (pos == null) return;
+	// First found min/max it tries removing markers on "prev" objects that do not exist. Lets not.
+	if (pos == null)
+	{
+		/* As this only happens once (and at the beginning), we set this row here to
+			skip doing another if (that runs everytime). What the row does is set the
+			left datapoint for "average-line" to left (beginning) of the chart.
+			There is data in dataPoints1 because we push before calling removeMarker.
+		*/
+		averagePoints[0].x = dataPoints1[0].x;
+
+		return;
+	}
 
 	// object is set to itself but without the marker keys
 	dataPoints1[pos] = {
@@ -21,25 +40,37 @@ function removeMarker(pos)
 	}
 }
 
+function pushData(timestamp, power)
+{
+	dataPoints1.push({
+		x: timestamp,
+		y: power
+	});
+
+	updateAverage();
+}
+
 function pushMarkerData(timestamp, power, type, color)
 {
 	dataPoints1.push({
 		x: timestamp,
 		y: power,
-		indexLabel: power+"",
+		indexLabel: power+" W",
 		markerType: type,
 		markerColor: color,
 		markerSize: 12
 	});
+
+	updateAverage();
 }
 
 function updateMax(timestamp, power)
 {
-	// Remove marker on previous max
-	removeMarker(max.arraypos);
-
 	// Push the new data, with marker
 	pushMarkerData(timestamp, power, "triangle", "red");
+
+	// Remove marker on previous max
+	removeMarker(max.arraypos);
 
 	// Store new max
 	max.val = power;
@@ -48,23 +79,33 @@ function updateMax(timestamp, power)
 
 function updateMin(timestamp, power)
 {
-	// Remove marker on previous min
-	removeMarker(min.arraypos);
-
 	// Push the new data, with marker
 	pushMarkerData(timestamp, power, "circle", "green");
+
+	// Remove marker on previous min
+	removeMarker(min.arraypos);
 
 	// Store new min
 	min.val = power;
 	min.arraypos = dataPoints1.length-1;	// point to (last) pushed element (0 indexed)
 }
 
-function pushData(timestamp, power)
+function updateAverage()
 {
-	dataPoints1.push({
-		x: timestamp,
-		y: power,
-	});
+	// Add the newly pushed value to total
+	total += dataPoints1[dataPoints1.length-1].y;
+
+	// Variables in JS are floats. They start loosing accuracy if they become too big.
+	if (total > 999999999999999) console.log("Loosing accuracy for 'average'");
+
+	var average = Math.round(total/dataPoints1.length);
+
+	// set left and right datapoint to same "height"
+	averagePoints[0].y = average;
+	averagePoints[1].y = average;
+
+	// set right datapoint to as far right as possible
+	averagePoints[1].x = dataPoints1[dataPoints1.length-1].x;
 }
 
 function add0(i)
@@ -96,7 +137,7 @@ window.onload = function() {
 			title: "Power consumption",
 			valueFormatString: "HH:mm:ss"
 		},
-		axisY:{
+		axisY: {
 			includeZero: false
 		}, 
 		data: [{ 
@@ -104,10 +145,18 @@ window.onload = function() {
 			type: "area",
 			xValueType: "dateTime",
 			showInLegend: true,
-			name: "Sensor A",
+			name: serieNames[0],
 			dataPoints: dataPoints1
+		},
+		{ 
+			// Average
+			type: "line",
+			xValueType: "dateTime",
+			showInLegend: true,
+			name: serieNames[1],
+			dataPoints: averagePoints
 		}],
-		legend:{
+		legend: {
 			cursor:"pointer",
 			itemclick : function(e) {
 				if (typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
@@ -138,7 +187,8 @@ window.onload = function() {
 	};
 
 	// updating legend text with updated with y Value 
-	chart.options.data[0].legendText = serieNames[0] + ": " + historicalData.points[historicalData.points.length-1][2];
+	chart.options.data[0].legendText = serieNames[0] + ": " + power + " W";
+	chart.options.data[1].legendText = serieNames[1] + ": " + averagePoints[1].y + " W";
 	chart.render();
 
 
@@ -163,7 +213,10 @@ window.onload = function() {
 			else 						pushData(time, power);
 
 
-			chart.options.data[0].legendText = serieNames[0] + ": " + power;
+			chart.options.data[0].legendText = serieNames[0] + ": " + power + " W";
+			chart.options.data[1].legendText = serieNames[1] + ": " + averagePoints[1].y + " W";
+
+			// Sets the clock under the X-axis
 			chart.options.axisX.title = add0(time.getHours()) + ':' + add0(time.getMinutes()) + ':' + add0(time.getSeconds());
 			chart.render();
 		}
