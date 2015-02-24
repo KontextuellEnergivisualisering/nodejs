@@ -86,7 +86,7 @@ window.onload = function() {
 					x: time.getTime(),
 					y: yVal
 				});
-
+				dataPoints1.pop();
 
 
 				chart.options.data[0].legendText = "Sensor A: " + yVal;
