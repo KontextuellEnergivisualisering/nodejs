@@ -83,8 +83,8 @@ window.onload = function() {
 
 		
 		// generates first set of dataPoints 
-		updateChart(3000);	
+		//updateChart(3000);	
 
 		// update chart after specified interval
-		setInterval(function(){updateChart()}, updateInterval);
+		//setInterval(function(){updateChart()}, updateInterval);
 }
