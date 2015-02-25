@@ -1,5 +1,7 @@
 var dataPoints1 = [];
 var serieNames = ["Mainmeter", "Average"];
+var powerIndex = -1;
+
 var max = {
 	val: Number.MIN_VALUE,
 	arraypos: null
@@ -133,6 +135,13 @@ function add0(i)
 
 window.onload = function() {
 
+	//Setting powerIndex, 1 for mean and 2 for real value
+	if(view == "now"){
+		powerIndex = 2;		
+	}
+	else{
+		powerIndex = 1;
+	}
 	/* CHART
 		When the site is loaded it creates the chart object using CanvasJS.
 	*/	
@@ -195,7 +204,7 @@ window.onload = function() {
 		var point = historicalData.points[historicalData.points.length - 1 - i];
 		var time = new Date();
 		time.setTime(point[0]);
-		var power = Math.round(point[1]);
+		var power = Math.round(point[powerIndex]);
 
 		if (power > max.val) 		updateMax(time, power);
 		else if (power < min.val)	updateMin(time, power);
@@ -215,12 +224,13 @@ window.onload = function() {
 	*/
 	var socket = io.connect('http://localhost:8000');
 	socket.on('mqtt', function (data) {
-		if (data.topic == 'Testsites/MunktellSiencePark/mainmeter/meterevent')
+		if (data.topic == 'Testsites/MunktellSiencePark/mainmeter/meterevent' && view == "now")
 		{
+			console.log("Data via socket.io and mqtt");
 			var parsedData = JSON.parse(data.payload);
 			time = new Date();
 			time.setTime(parsedData.time * 1000);
-			var power =  Math.round(Number(parsedData.mean));
+			var power =  Math.round(Number(parsedData.power));
 
 			if (power > max.val) 		updateMax(time, power);
 			else if (power < min.val)	updateMin(time, power);
@@ -235,8 +245,10 @@ window.onload = function() {
 
 			// Sets the clock under the X-axis
 			chart.options.axisX.title = add0(time.getHours()) + ':' + add0(time.getMinutes()) + ':' + add0(time.getSeconds());
-			console.log(test);
 			chart.render();
+		}
+		else{
+			socket.disconnect();
 		}
 	});
 	socket.on('event', function(data){

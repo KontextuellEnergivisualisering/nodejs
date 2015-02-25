@@ -19,22 +19,69 @@ var eventClient = influx({
 })
 
 //SQL query used for getting data from InluxDB
-var query = 'select mean(power) from "Testsites/MunktellSiencePark/mainmeter/meterevent" where time > now() - 1d group by time(1m)';
+var query_now = 'select * from "Testsites/MunktellSiencePark/mainmeter/meterevent" limit 100';
+var query_day = 'select mean(power) from "Testsites/MunktellSiencePark/mainmeter/meterevent" where time > now() - 1d group by time(1m)';
+var query_week = 'select mean(power) from "Testsites/MunktellSiencePark/mainmeter/meterevent" where time > now() - 7d group by time(1h)';
+var query_month = 'select mean(power) from "Testsites/MunktellSiencePark/mainmeter/meterevent" where time > now() - 30d group by time(24h)';
 
 //time sequence no, value, id, priority 
 
 /* GET home page. */
 router.get('/', function(req, res) {
-  client.query(query, function(err, data){
+  client.query(query_now, function(err, data){
 		if(err!=null){
 			res.send('there was an error\n');
 			console.log(err);
 		}
 		//Render visualization with data from database
 		res.render('index', {
-			data: JSON.stringify(data[0])
+			data: JSON.stringify(data[0]),
+			view: "now"
+		});
+	});
+});
+router.get('/day_view', function(req, res) {
+
+  client.query(query_day, function(err, data){
+		if(err!=null){
+			res.send('there was an error\n');
+			console.log(err);
+		}
+		//Render visualization with data from database
+		res.render('index', {
+			data: JSON.stringify(data[0]),
+			view: "day"
 		});
 	});
 });
 
+router.get('/week_view', function(req, res) {
+
+  client.query(query_week, function(err, data){
+		if(err!=null){
+			res.send('there was an error\n');
+			console.log(err);
+		}
+		//Render visualization with data from database
+		res.render('index', {
+			data: JSON.stringify(data[0]),
+			view: "week"
+		});
+	});
+});
+
+router.get('/month_view', function(req, res) {
+
+  client.query(query_month, function(err, data){
+		if(err!=null){
+			res.send('there was an error\n');
+			console.log(err);
+		}
+		//Render visualization with data from database
+		res.render('index', {
+			data: JSON.stringify(data[0]),
+			view: "month"
+		});
+	});
+});
 module.exports = {router: router, eventClient: eventClient};
