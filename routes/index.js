@@ -20,16 +20,8 @@ router.get('/', function(req, res) {
 			res.send('there was an error\n');
 			console.log(err);
 		}
-
-		//GOT A RESPONSE, these will later on be removed
-		var columns = data[0].columns;
-		var points = data[0].points;
-
 		//Render visualization with data from database
 		res.render('index', {
-			title: 'Visualization graph',
-			columns: columns,
-			points: points,
 			data: JSON.stringify(data[0])
 		});
 	});
