@@ -218,8 +218,11 @@ window.onload = function() {
 					x: time.getTime(),
 					y: yVal
 				});
+<<<<<<< HEAD
 				dataPoints1.pop();
 >>>>>>> Nicer interface with bootstrap
+=======
+>>>>>>> Better layout
 
 			chart.options.data[0].legendText = serieNames[0] + ": " + power + " W";
 			chart.options.data[1].legendText = serieNames[1] + ": " + averagePoints[1].y + " W";
