@@ -10,8 +10,18 @@ var client 	= influx({
 	database: 'Munktell'
 })
 
+var eventClient = influx({
+	host: 'localhost',
+	port: 8086,
+	username: 'root',
+	password: 'root',
+	database: 'grupp5'
+})
+
 //SQL query used for getting data from InluxDB
 var query = 'select * from "Testsites/MunktellSiencePark/mainmeter/meterevent" limit 100';
+
+//time sequence no, value, id, priority 
 
 /* GET home page. */
 router.get('/', function(req, res) {
@@ -27,4 +37,4 @@ router.get('/', function(req, res) {
 	});
 });
 
-module.exports = router;
+module.exports = {router: router, eventClient: eventClient};
