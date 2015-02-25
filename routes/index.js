@@ -11,7 +11,7 @@ var client 	= influx({
 })
 
 //SQL query used for getting data from InluxDB
-var query = 'select * from "Testsites/MunktellSiencePark/mainmeter/meterevent" limit 100';
+var query = 'select mean(power) from "Testsites/MunktellSiencePark/mainmeter/meterevent" where time > now() - 1d group by time(1m)';
 
 /* GET home page. */
 router.get('/', function(req, res) {

@@ -179,7 +179,7 @@ window.onload = function() {
 		var point = historicalData.points[historicalData.points.length - 1 - i];
 		var time = new Date();
 		time.setTime(point[0]);
-		var power = Math.round(point[2]);
+		var power = Math.round(point[1]);
 
 		if (power > max.val) 		updateMax(time, power);
 		else if (power < min.val)	updateMin(time, power);
@@ -202,11 +202,9 @@ window.onload = function() {
 		if (data.topic == 'Testsites/MunktellSiencePark/mainmeter/meterevent')
 		{
 			var parsedData = JSON.parse(data.payload);
-			//console.log(JSON.stringify(parsedData));
-
 			time = new Date();
 			time.setTime(parsedData.time * 1000);
-			var power =  Math.round(Number(parsedData.power));
+			var power =  Math.round(Number(parsedData.mean));
 
 			if (power > max.val) 		updateMax(time, power);
 			else if (power < min.val)	updateMin(time, power);
@@ -217,6 +215,7 @@ window.onload = function() {
 
 			// Sets the clock under the X-axis
 			chart.options.axisX.title = add0(time.getHours()) + ':' + add0(time.getMinutes()) + ':' + add0(time.getSeconds());
+			console.log(test);
 			chart.render();
 		}
 	});
