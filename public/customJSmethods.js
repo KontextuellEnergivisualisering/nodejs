@@ -208,21 +208,9 @@ window.onload = function() {
 			time.setTime(parsedData.time * 1000);
 			var power =  Math.round(Number(parsedData.power));
 
-<<<<<<< HEAD
 			if (power > max.val) 		updateMax(time, power);
 			else if (power < min.val)	updateMin(time, power);
 			else 						pushData(time, power);
-
-=======
-				dataPoints1.push({
-					x: time.getTime(),
-					y: yVal
-				});
-<<<<<<< HEAD
-				dataPoints1.pop();
->>>>>>> Nicer interface with bootstrap
-=======
->>>>>>> Better layout
 
 			chart.options.data[0].legendText = serieNames[0] + ": " + power + " W";
 			chart.options.data[1].legendText = serieNames[1] + ": " + averagePoints[1].y + " W";
