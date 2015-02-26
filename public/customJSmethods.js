@@ -1,5 +1,7 @@
 var dataPoints1 = [];
 var serieNames = ["Mainmeter", "Average"];
+var powerIndex = -1;
+
 var max = {
 	val: Number.MIN_VALUE,
 	arraypos: null
@@ -94,6 +96,7 @@ function updateAverage()
 {
 	// Add the newly pushed value to total
 	total += dataPoints1[dataPoints1.length-1].y;
+	//console.log('Pre: ' + total)
 
 	// Variables in JS are floats. They start loosing accuracy if they become too big.
 	if (total > 999999999999999) console.log("Loosing accuracy for 'average'");
@@ -108,6 +111,21 @@ function updateAverage()
 	averagePoints[1].x = dataPoints1[dataPoints1.length-1].x;
 }
 
+//
+function adjustAverage(){
+	var totalNew 	= averagePoints[0].y * dataPoints1.length;
+	//console.log('A: ' + String(totalNew) + ', oldavg: ' + averagePoints[0].y);
+	totalNew 	-= dataPoints1[0].y;
+	total = totalNew;
+
+	//console.log('B: ' + total + ', newavg: ' + Math.round(total / (dataPoints1.length - 1)));
+	//console.log(typeof(dataPoints1[0].y));
+	var average = Math.round(total / (dataPoints1.length - 1));
+	averagePoints[0].y = average;
+	averagePoints[1].y = average;
+	averagePoints[0].x = dataPoints1[1].x;
+}
+
 function add0(i)
 {
 	// Add extra zero to clock (7:1 -> 07:01)
@@ -117,6 +135,13 @@ function add0(i)
 
 window.onload = function() {
 
+	//Setting powerIndex, 1 for mean and 2 for real value
+	if(view == "now"){
+		powerIndex = 2;		
+	}
+	else{
+		powerIndex = 1;
+	}
 	/* CHART
 		When the site is loaded it creates the chart object using CanvasJS.
 	*/	
@@ -179,7 +204,7 @@ window.onload = function() {
 		var point = historicalData.points[historicalData.points.length - 1 - i];
 		var time = new Date();
 		time.setTime(point[0]);
-		var power = Math.round(point[2]);
+		var power = Math.round(point[powerIndex]);
 
 		if (power > max.val) 		updateMax(time, power);
 		else if (power < min.val)	updateMin(time, power);
@@ -199,11 +224,10 @@ window.onload = function() {
 	*/
 	var socket = io.connect('http://localhost:8000');
 	socket.on('mqtt', function (data) {
-		if (data.topic == 'Testsites/MunktellSiencePark/mainmeter/meterevent')
+		if (data.topic == 'Testsites/MunktellSiencePark/mainmeter/meterevent' && view == "now")
 		{
+			console.log("Data via socket.io and mqtt");
 			var parsedData = JSON.parse(data.payload);
-			//console.log(JSON.stringify(parsedData));
-
 			time = new Date();
 			time.setTime(parsedData.time * 1000);
 			var power =  Math.round(Number(parsedData.power));
@@ -212,6 +236,10 @@ window.onload = function() {
 			else if (power < min.val)	updateMin(time, power);
 			else 						pushData(time, power);
 
+			adjustAverage();
+			dataPoints1.shift();
+			
+
 			chart.options.data[0].legendText = serieNames[0] + ": " + power + " W";
 			chart.options.data[1].legendText = serieNames[1] + ": " + averagePoints[1].y + " W";
 
@@ -219,5 +247,15 @@ window.onload = function() {
 			chart.options.axisX.title = add0(time.getHours()) + ':' + add0(time.getMinutes()) + ':' + add0(time.getSeconds());
 			chart.render();
 		}
+		else if(view != "now"){
+			console.log("disconnect");
+			socket.disconnect();
+		}
 	});
+	socket.on('event', function(data){
+		for(var i = 0; i < 4; i++){
+			document.getElementById("card" + i).innerHTML = data.payload[i][1]
+		}
+	})
+
 }
