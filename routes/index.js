@@ -19,7 +19,7 @@ var eventClient = influx({
 })
 
 //SQL query used for getting data from InluxDB
-var query_now = 'select * from "Testsites/MunktellSiencePark/mainmeter/meterevent" limit 100';
+var query_now = 'select * from "Testsites/MunktellSiencePark/mainmeter/meterevent" limit 10';
 var query_day = 'select mean(power) from "Testsites/MunktellSiencePark/mainmeter/meterevent" where time > now() - 1d group by time(1h)';
 var query_week = 'select mean(power) from "Testsites/MunktellSiencePark/mainmeter/meterevent" where time > now() - 7d group by time(1d)';
 

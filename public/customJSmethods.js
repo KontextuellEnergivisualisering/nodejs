@@ -25,7 +25,7 @@ function removeMarker(pos)
 	// First found min/max it tries removing markers on "prev" objects that do not exist. Lets not.
 	if (pos == null)
 	{
-		/* As this only happens once (and at the beginning), we set this row here to
+		/* As this only happens once (at the beginning), we set this row here to
 			skip doing another if (that runs everytime). What the row does is set the
 			left datapoint for "average-line" to left (beginning) of the chart.
 			There is data in dataPoints1 because we push before calling removeMarker.
@@ -34,8 +34,8 @@ function removeMarker(pos)
 
 		return;
 	}
-
 	// object is set to itself but without the marker keys
+	//console.log("Remove marker from: " + pos);
 	dataPoints1[pos] = {
 		x: dataPoints1[pos].x,
 		y: dataPoints1[pos].y
@@ -68,30 +68,73 @@ function pushMarkerData(timestamp, power, type, color)
 
 function updateMax(timestamp, power)
 {
-	// Push the new data, with marker
-	pushMarkerData(timestamp, power, "triangle", "red");
+		// Push the new data, with marker
+		pushMarkerData(timestamp, power, "triangle", "red");
 
-	// Remove marker on previous max
-	removeMarker(max.arraypos);
+		// Remove marker on previous max
+		removeMarker(max.arraypos);
 
-	// Store new max
-	max.val = power;
-	max.arraypos = dataPoints1.length-1;	// point to (last) pushed element (0 indexed)
+		// Store new max
+		max.val = power;
+		max.arraypos = dataPoints1.length-1;	// point to (last) pushed element (0 indexed)	
 }
-
 function updateMin(timestamp, power)
 {
-	// Push the new data, with marker
-	pushMarkerData(timestamp, power, "circle", "green");
+		// Push the new data, with marker
+		pushMarkerData(timestamp, power, "circle", "green");
 
-	// Remove marker on previous min
-	removeMarker(min.arraypos);
+		removeMarker(min.arraypos);
 
-	// Store new min
-	min.val = power;
-	min.arraypos = dataPoints1.length-1;	// point to (last) pushed element (0 indexed)
+		// Store new min
+		min.val = power;
+		min.arraypos = dataPoints1.length-1;
 }
+function resetMax(){
 
+		console.log("before_max");
+		console.log(dataPoints1[max.arraypos]);
+	var powerArray = dataPoints1.map(function(val){return val.y;});
+	max.val = Math.max.apply(Math, powerArray);
+	max.arraypos = powerArray.indexOf(max.val);
+	var time = dataPoints1[max.arraypos].x;
+	var power = dataPoints1[max.arraypos].y;
+	
+	dataPoints1[max.arraypos] = {
+			x: time,
+			y: power, 
+			indexLabel: power+' W',
+			markerType: "triangle",
+			markerColor: "red",
+			markerSize: 12
+		};
+
+		console.log("after_max");
+		console.log(dataPoints1[max.arraypos]);
+		// Push the new data, with marker
+		//pushMarkerData(dataPoints1[max.arraypos].x, max.val, "triangle", "red");
+}
+function resetMin(){
+		var powerArray = dataPoints1.map(function(val){return val.y;});
+		min.val = Math.min.apply(Math, powerArray);
+		min.arraypos = powerArray.indexOf(min.val);
+		var time = dataPoints1[min.arraypos].x;
+		var power = dataPoints1[min.arraypos].y;
+		console.log("before");
+		console.log(dataPoints1[min.arraypos]);
+		dataPoints1[min.arraypos] = {
+			x: time, 
+			y: power, 
+			indexLabel: power+' W',
+			markerType: "circle",
+			markerColor: "green",
+			markerSize: 12
+		};
+		console.log("after");
+		console.log(dataPoints1[min.arraypos]);
+		//console.log("max.val: " + min.val + ", max.arraypos: " + min.arraypos);
+		// Push the new data, with marker
+		//pushMarkerData(dataPoints1[min.arraypos].x, min.val, "triangle", "red");
+}
 function updateAverage()
 {
 	// Add the newly pushed value to total
@@ -226,7 +269,7 @@ window.onload = function() {
 	socket.on('mqtt', function (data) {
 		if (data.topic == 'Testsites/MunktellSiencePark/mainmeter/meterevent' && view == "now")
 		{
-			console.log("Data via socket.io and mqtt");
+			//console.log("Data via socket.io and mqtt");
 			var parsedData = JSON.parse(data.payload);
 			time = new Date();
 			time.setTime(parsedData.time * 1000);
@@ -234,10 +277,17 @@ window.onload = function() {
 
 			if (power > max.val) 		updateMax(time, power);
 			else if (power < min.val)	updateMin(time, power);
-			else 						pushData(time, power);
-
+			
+			else{
+				pushData(time, power);
+				max.arraypos -= 1;
+				min.arraypos -= 1;
+			}
 			adjustAverage();
 			dataPoints1.shift();
+			
+			if (min.arraypos == 0) resetMin();
+			else if (max.arraypos == 0) resetMax();
 			
 
 			chart.options.data[0].legendText = serieNames[0] + ": " + power + " W";
