@@ -247,7 +247,8 @@ window.onload = function() {
 			chart.options.axisX.title = add0(time.getHours()) + ':' + add0(time.getMinutes()) + ':' + add0(time.getSeconds());
 			chart.render();
 		}
-		else{
+		else if(view != "now"){
+			console.log("disconnect");
 			socket.disconnect();
 		}
 	});
