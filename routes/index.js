@@ -2,6 +2,7 @@ var express = require('express');
 var influx 	= require('influx');		//Libary used for connection with the influx database
 var router = express.Router();
 var pendingDBrequest = false; 
+var strftime = require('strftime');
 
 var client 	= influx({
 	host: 'localhost',
@@ -21,7 +22,7 @@ var priorityUpdates;
 
 //SQL query used for getting data from InluxDB
 var query = {
-	now: 'select * from "Testsites/MunktellSiencePark/mainmeter/meterevent" limit 100',
+	now: 'select * from "Testsites/MunktellSiencePark/mainmeter/meterevent" where time > now() - 30m',
 	day: 'select mean(power) from "Testsites/MunktellSiencePark/mainmeter/meterevent" where time > now() - 1d group by time(1h)',
 	week: 'select mean(power) from "Testsites/MunktellSiencePark/mainmeter/meterevent" where time > now() - 7d group by time(1d)'
 }
@@ -118,8 +119,10 @@ function prioritizedData(eventData, chartType){
 //Check which column correspond to event type and priority, and use these indices when extracting data.	
 function timeTypeAndPriorityForEvents(influxData, ageFactor){
 	var timeIndex 	= [0];
+	var sequenceIndex = [1];
 	var typeIndex 	= influxData.columns.indexOf('id');
 	var prioIndex 	= influxData.columns.indexOf('priority');
+	var valueIndex	= influxData.columns.indexOf('value');
 	var date 		= new Date()
 
 	return influxData.points.map(function(point){
@@ -127,11 +130,14 @@ function timeTypeAndPriorityForEvents(influxData, ageFactor){
 		eventDate.setTime(point[timeIndex]) 
 		minuteDiff 		= Math.floor(((date - eventDate) / 1000) / 60); //date diff is in ms, convert to min.
 
+		var roundedValue = Math.round(point[valueIndex]);
+
 		var x = {
-			time: eventDate.toISOString(), 
+			date: strftime('%F', eventDate),
+			time: strftime('%T', eventDate), 
 			type: point[typeIndex], 
-			prio: point[prioIndex], 
-			ageAdjustedPrio: point[prioIndex] + minuteDiff * ageFactor
+			value: roundedValue,
+			sequenceNo: point[sequenceIndex] 
 		};
 		return x;
 	});

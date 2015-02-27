@@ -125,13 +125,6 @@ function adjustAverage(){
 	averagePoints[0].x = dataPoints1[1].x;
 }
 
-function add0(i)
-{
-	// Add extra zero to clock (7:1 -> 07:01)
-    if (i < 10) return ("0" + i);
-    return i;
-}
-
 window.onload = function() {
 	/* CHART
 		When the site is loaded it creates the chart object using CanvasJS.
@@ -151,7 +144,7 @@ window.onload = function() {
 		},
 		axisX: {
 			title: "Power consumption",
-			valueFormatString: "HH:mm:ss"
+			intervalType: "hour"
 		},
 		axisY: {
 			includeZero: false
@@ -205,6 +198,17 @@ window.onload = function() {
 	// updating legend text with updated with y Value 
 	chart.options.data[0].legendText = serieNames[0] + ": " + power + " W";
 	chart.options.data[1].legendText = serieNames[1] + ": " + averagePoints[1].y + " W";
+
+	if(view == "week"){
+		chart.options.axisX.intervalType = "day";
+	}
+	else if(view == "day"){
+		chart.options.axisX.intervalType = "hour";
+	}
+	else{
+		chart.options.axisX.intervalType = "hour";
+	}
+
 	chart.render();
 
 
@@ -235,7 +239,8 @@ window.onload = function() {
 			chart.options.data[1].legendText = serieNames[1] + ": " + averagePoints[1].y + " W";
 
 			// Sets the clock under the X-axis
-			chart.options.axisX.title = add0(time.getHours()) + ':' + add0(time.getMinutes()) + ':' + add0(time.getSeconds());
+			//chart.options.axisX.title = add0(time.getHours()) + ':' + add0(time.getMinutes()) + ':' + add0(time.getSeconds());
+			chart.options.axisX.title = moment(time).format("HH:mm:ss");
 			chart.render();
 		}
 		else if(view != "now"){
@@ -245,11 +250,16 @@ window.onload = function() {
 	});
 	socket.on('event', function(data){
 		for(var i = 0; i < 4; i++){
-			console.log(data.payload[i]);
-			document.getElementById("time" + i).innerHTML = data.payload[i].time;
-			document.getElementById("type" + i).innerHTML = 'type: ' + data.payload[i].type;
-			document.getElementById("adjPrio" + i).innerHTML = 'adj prio: ' + data.payload[i].ageAdjustedPrio;
-			document.getElementById("prio" + i).innerHTML = 'raw prio: ' + data.payload[i].prio;
+			//if(prevCards[i].id === data.payload[i].sequenceNo)
+			if(!(parseInt($(".priorityCard")[i].id) === data.payload[i].sequenceNo)){
+				document.getElementById("type" + i).innerHTML = data.payload[i].type;
+				document.getElementById("date" + i).innerHTML = data.payload[i].date;
+				document.getElementById("time" + i).innerHTML = data.payload[i].time;
+				document.getElementById("value" + i).innerHTML = 'Value: ' + data.payload[i].value + ' W';
+				//ANIMATION FOR NEW PRIORITY CARD!!
+				//$.noConflict();
+				//$($(document).find(".priorityCard")[i]).effect("bounce", "slow");
+			}
 		}
 	})
 

@@ -8,7 +8,8 @@
     "express": "^4.11.2",
     "influx": "^3.3.0",
     "mqtt": "^1.0.10",
-    "socket.io": "^1.3.4"
+    "socket.io": "^1.3.4",
+    "strftime": "^0.8.2"
   },
   "devDependencies": {},
   "scripts": {

@@ -11,13 +11,13 @@
                 <a class="navbar-brand" href="#">Kontextuell energivisualisering</a>
          </div>
 	</nav>
-	<div class="page-wrapper">
+	<div class="page-wrapper container">
             
 			<div class="row">
-                <div class="col-md-8">
-                    <div class="panel panel-default">
+                <div class="col-md-12">
+                    <div class="panel panel-primary">
                          <div class="panel-heading">
-                            <i class="fa fa-bar-chart-o fa-fw"></i> Real-Time
+                            <i class="fa fa-bar-chart-o fa-fw"></i> Graph of power consumption
                             <div class="pull-right">
                                 <div class="btn-group">
                                     <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
@@ -25,7 +25,7 @@
                                         <span class="caret"></span>
                                     </button>
                                     <ul class="dropdown-menu pull-right" role="menu">
-                                        <li><a href="/">Now</a>
+                                        <li><a href="/">Realtime</a>
                                         </li>
                                         <li><a href="/day">Day</a>
                                         </li>
@@ -41,53 +41,24 @@
                         <!-- /.panel-body -->
                     </div>
                 </div>
-                <div class="col-md-4">
-	                <div class="panel panel-default">
-	                	<div class="panel-heading">Notifications</div>
-	                	<div class="panel-body">
-	                		<div class="list-group">
-                                <a href="#" class="list-group-item">
-                                    <i class="fa fa-comment fa-fw"></i> New Peak in power
-                                    <span class="pull-right text-muted small"><em>4 minutes ago</em>
-                                    </span>
-                                </a>
-                                <a href="#" class="list-group-item">
-                                    <i class="fa fa-twitter fa-fw"></i> Slow peak
-                                    <span class="pull-right text-muted small"><em>12 minutes ago</em>
-                                    </span>
-                                </a>
-                            </div>
-                            <!-- /.list-group -->
-                            <a href="#" class="btn btn-default btn-block">View All Alerts</a>
-	                	</div>
-	                </div>
-                </div>
              </div>
              <!-- /.row -->
              <div class="row">
                 <%for(var i = 0; i < 4; i++){%>
-                <div class="col-md-3">
-                    <div class="panel panel-primary">
-                        <div class="panel-heading">
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <i class="fa fa-flag fa-5x pull-left"></i>
-                                </div>
-                                <div class="col-md-9 text-right">
-                                    <div id="time<%=i%>" class="huge"><%=priorityData[i].time%></div>
-                                    <div id="type<%=i%>">type: <%=priorityData[i].type;%></div>
-                                    <div id="adjPrio<%=i%>">adj prio: <%=priorityData[i].ageAdjustedPrio;%></div>
-                                    <div id="prio<%=i%>">raw prio: <%=priorityData[i].prio;%></div>
-                                </div>
-                            </div>
+                <div class="col-md-3 priorityCard" id="<%=priorityData[i].sequenceNo;%>">
+                    <div class="panel panel-info">
+                        <div class="panel-heading"> 
+                            <i class="fa fa-exclamation-circle fa-fw"></i> <span id="type<%=i%>"><%=priorityData[i].type;%></span>
                         </div>
-                        <a href="#">
-                            <div class="panel-footer">
-                                <span class="pull-left">View Details</span>
-                                <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
-                                <div class="clearfix"></div>
+                            <div class="panel-body">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div id="date<%=i%>" class="huge"><%=priorityData[i].date%></div>
+                                        <div id="time<%=i%>" class="huge"><%=priorityData[i].time%></div>
+                                        <div id="value<%=i%>">Value: <%=priorityData[i].value;%> W</div>
+                                    </div>
+                                </div>
                             </div>
-                        </a>
                     </div>
                 </div>
                 <%}%>  
