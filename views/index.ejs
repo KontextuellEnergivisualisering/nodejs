@@ -27,9 +27,9 @@
                                     <ul class="dropdown-menu pull-right" role="menu">
                                         <li><a href="/">Now</a>
                                         </li>
-                                        <li><a href="/day_view">Day</a>
+                                        <li><a href="/day">Day</a>
                                         </li>
-                                        <li><a href="/week_view">Week</a>
+                                        <li><a href="/week">Week</a>
                                         </li>
                                     </ul>
                                 </div>
@@ -65,7 +65,6 @@
              </div>
              <!-- /.row -->
              <div class="row">
-                <%var names = ['Energy', 'Power', 'Weekly Usage', 'Daily usage'];%>
                 <%for(var i = 0; i < 4; i++){%>
                 <div class="col-md-3">
                     <div class="panel panel-primary">
@@ -75,8 +74,10 @@
                                     <i class="fa fa-flag fa-5x pull-left"></i>
                                 </div>
                                 <div class="col-md-9 text-right">
-                                    <div id="card<%=i%>" class="huge">26</div>
-                                    <div><%=names[i];%></div>
+                                    <div id="time<%=i%>" class="huge"><%=priorityData[i].time%></div>
+                                    <div id="type<%=i%>">type: <%=priorityData[i].type;%></div>
+                                    <div id="adjPrio<%=i%>">adj prio: <%=priorityData[i].ageAdjustedPrio;%></div>
+                                    <div id="prio<%=i%>">raw prio: <%=priorityData[i].prio;%></div>
                                 </div>
                             </div>
                         </div>

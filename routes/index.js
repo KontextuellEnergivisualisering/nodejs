@@ -1,6 +1,7 @@
 var express = require('express');
 var influx 	= require('influx');		//Libary used for connection with the influx database
 var router = express.Router();
+var pendingDBrequest = false; 
 
 var client 	= influx({
 	host: 'localhost',
@@ -9,7 +10,6 @@ var client 	= influx({
 	password: 'root',
 	database: 'Munktell'
 })
-
 var eventClient = influx({
 	host: 'localhost',
 	port: 8086,
@@ -17,56 +17,135 @@ var eventClient = influx({
 	password: 'root',
 	database: 'grupp5'
 })
+var priorityUpdates;
 
 //SQL query used for getting data from InluxDB
-var query_now = 'select * from "Testsites/MunktellSiencePark/mainmeter/meterevent" limit 100';
-var query_day = 'select mean(power) from "Testsites/MunktellSiencePark/mainmeter/meterevent" where time > now() - 1d group by time(1h)';
-var query_week = 'select mean(power) from "Testsites/MunktellSiencePark/mainmeter/meterevent" where time > now() - 7d group by time(1d)';
+var query = {
+	now: 'select * from "Testsites/MunktellSiencePark/mainmeter/meterevent" limit 100',
+	day: 'select mean(power) from "Testsites/MunktellSiencePark/mainmeter/meterevent" where time > now() - 1d group by time(1h)',
+	week: 'select mean(power) from "Testsites/MunktellSiencePark/mainmeter/meterevent" where time > now() - 7d group by time(1d)'
+}
 
-//time sequence no, value, id, priority 
+//ageingFactor is used to calculate age-adjusted priorities
+//A priority has a linear decline per minute in its priority.
+//The ageing factor stands for the number of points per minute lost.
+var ageingFactors = {
+	now: 0.1, 			//one point lost per 10m
+	day: 0.00138889, 	//one point lost per 12h
+	week: 0.00023148 	//one point lost per 3d
+}
+var io;
 
-/* GET home page. */
-router.get('/', function(req, res) {
-  client.query(query_now, function(err, data){
-		if(err!=null){
-			res.send('there was an error\n');
-			console.log(err);
-		}
-		//Render visualization with data from database
-		res.render('index', {
-			data: JSON.stringify(data[0]),
-			view: "now"
+module.exports = function(ioObj){
+	io = ioObj;
+
+	/* GET home page. */
+	router.get('/:chartType?', function(req, res) {
+
+		//check what resolution is shown for the graph
+	  	var chartType 	= req.params.chartType || 'now';
+	  	var dbPowerCol 	= chartType == 'now' ? 'power' : 'mean';
+
+		if(chartType !== 'now')
+			clearInterval(priorityUpdates)
+
+	  	//Fetch power data from influxDB
+	  	client.query(query[chartType], function(err, powerData){
+			if(err!=null){
+				res.send('there was an error\n');
+				console.log(err);
+			};
+
+			//Fetch event data from influxDB
+			//TODO: limit events fetched
+			eventClient.query('select * from "events"', function(err, eventData){
+				if(err!=null){
+					res.send('there was an error\n');
+					console.log(err);
+				}
+
+				if(chartType == 'now')
+					priorityUpdates = setInterval(function(){updatePriorityCards(chartType)}, 10000);
+
+				//Render visualization with data from database
+				res.render('index', {
+					data: timeAndPower(powerData[0], dbPowerCol),
+					view: chartType,
+					priorityData: prioritizedData(eventData[0], chartType)
+				});
+			});
 		});
 	});
-});
-router.get('/day_view', function(req, res) {
+		
+	return {router: router, eventClient: eventClient};
+}
 
-  client.query(query_day, function(err, data){
+//TODO: emit only the 4 highest prioritized
+//Fetches priority events from influxDB and emits them age-weighted 
+//priority to the socket as an 'event' message.
+function updatePriorityCards(chartType){
+	if(pendingDBrequest)
+		return;
+
+	pendingDBrequest = true;
+	eventClient.query('select * from "events" limit 100', function(err, data){
+		pendingDBrequest = false;
+
 		if(err!=null){
-			res.send('there was an error\n');
-			console.log(err);
-		}
-		//Render visualization with data from database
-		res.render('index', {
-			data: JSON.stringify(data[0]),
-			view: "day"
-		});
+			//TODO: Improve this error handling
+			console.log('there was an error');
+		}else{
+			io.sockets.emit('event',{'topic':'testEvent','payload':prioritizedData(data[0], chartType)});	
+		}		
 	});
-});
+}
 
-router.get('/week_view', function(req, res) {
-
-  client.query(query_week, function(err, data){
-		if(err!=null){
-			res.send('there was an error\n');
-			console.log(err);
-		}
-		//Render visualization with data from database
-		res.render('index', {
-			data: JSON.stringify(data[0]),
-			view: "week"
-		});
+//Sort datapoints on the age-adjusted prioritization.
+function prioritizedData(eventData, chartType){
+	var ageFactor 	= ageingFactors[chartType];
+	var events 		= timeTypeAndPriorityForEvents(eventData, ageFactor);
+	
+	//Sort events on ascending aged prio order
+	events.sort(function(a,b){
+		return a.ageAdjustedPrio - b.ageAdjustedPrio;
 	});
-});
 
-module.exports = {router: router, eventClient: eventClient};
+	return events;
+}
+
+//FOR PRIORITY EVENTS
+//influxDB data does is not sent with consistent column indices (except for sequence no and time).
+//Check which column correspond to event type and priority, and use these indices when extracting data.	
+function timeTypeAndPriorityForEvents(influxData, ageFactor){
+	var timeIndex 	= [0];
+	var typeIndex 	= influxData.columns.indexOf('id');
+	var prioIndex 	= influxData.columns.indexOf('priority');
+	var date 		= new Date()
+
+	return influxData.points.map(function(point){
+		var eventDate 	= new Date()
+		eventDate.setTime(point[timeIndex]) 
+		minuteDiff 		= Math.floor(((date - eventDate) / 1000) / 60); //date diff is in ms, convert to min.
+
+		var x = {
+			time: eventDate.toISOString(), 
+			type: point[typeIndex], 
+			prio: point[prioIndex], 
+			ageAdjustedPrio: point[prioIndex] + minuteDiff * ageFactor
+		};
+		return x;
+	});
+}
+
+//FOR POWER CONSUMPTION
+//influxDB data does is not sent with consistent column indices (except for sequence no and time).
+//First check which column correspond to power, and use this index when extracting data.	
+function timeAndPower(influxData, colName){
+	var timeIndex 	= [0];
+	var powerIndex 	= influxData.columns.indexOf(colName);
+
+	return JSON.stringify(influxData.points.map(function(point){
+		var x = {time: point[timeIndex], power: point[powerIndex]};
+		return x;
+	}));
+}

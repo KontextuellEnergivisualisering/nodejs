@@ -1,12 +1,16 @@
 var socket 	= require('socket.io');		//Socket.io used for real-time engine
 var mqtt 	= require('mqtt');			//Used for subscribing to MQTT-broakers
 
-var express = require('express')		//Express.js web-framwork
-	, routeData = require('./routes/index');		//Require routes from 
-
+var express = require('express');		//Express.js web-framwork 
 var app 	= express();
 var port 	= 8000;
-var pendingDBrequest = false; 
+var server = app.listen(port, function(){
+	console.log('listening on port ' + port);
+});
+
+//Require routes. Note that routes need io object
+var io 			= socket.listen(server);
+var routeData 	= require('./routes/index')(io);		//Require routes from
 
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');	
@@ -38,11 +42,6 @@ app.use(function(err, req, res, next) {
     });
 });
 
-var server = app.listen(port, function(){
-	console.log('listening on port ' + port);
-});
-var io = socket.listen(server);
-
 io.on('connection', function(socket){
 	console.log('user connected');
 
@@ -58,31 +57,4 @@ io.on('connection', function(socket){
 		console.log('user disconnected');
 		socket.mqtt.end()
 	});
-
-	//Update priority cards
-	updatePriorityCards();
-	setInterval(updatePriorityCards, 10000);
 });
-
-function updatePriorityCards(){
-	if(pendingDBrequest)
-		return;
-
-	pendingDBrequest = true;
-	routeData.eventClient.query('select * from "events" limit 100', function(err, data){
-		pendingDBrequest = false;
-
-		if(err!=null){
-			//TODO: Improve this error handling
-			console.log('there was an error');
-		}else{
-			io.sockets.emit('event',{'topic':'testEvent','payload':prioritizedData(data[0])});	
-		}		
-	});
-}
-
-//TODO: write a better prioritization function including ageing.
-//Sort datapoints on this prioritization.
-function prioritizedData(eventData){
-	return eventData.points;
-}

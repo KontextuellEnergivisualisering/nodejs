@@ -1,6 +1,5 @@
 var dataPoints1 = [];
 var serieNames = ["Mainmeter", "Average"];
-var powerIndex = -1;
 
 var max = {
 	val: Number.MIN_VALUE,
@@ -134,14 +133,6 @@ function add0(i)
 }
 
 window.onload = function() {
-
-	//Setting powerIndex, 1 for mean and 2 for real value
-	if(view == "now"){
-		powerIndex = 2;		
-	}
-	else{
-		powerIndex = 1;
-	}
 	/* CHART
 		When the site is loaded it creates the chart object using CanvasJS.
 	*/	
@@ -199,12 +190,12 @@ window.onload = function() {
 		Because the chart is empty after it is created, we fill it with data before start
 		fetching the real-time data.
 	*/
-	for (var i = 0; i < historicalData.points.length; i++)
+	for (var i = 0; i < historicalData.length; i++)
 	{	
-		var point = historicalData.points[historicalData.points.length - 1 - i];
+		var point = historicalData[historicalData.length - 1 - i];
 		var time = new Date();
-		time.setTime(point[0]);
-		var power = Math.round(point[powerIndex]);
+		time.setTime(point.time);
+		var power = Math.round(point.power);
 
 		if (power > max.val) 		updateMax(time, power);
 		else if (power < min.val)	updateMin(time, power);
@@ -254,7 +245,11 @@ window.onload = function() {
 	});
 	socket.on('event', function(data){
 		for(var i = 0; i < 4; i++){
-			document.getElementById("card" + i).innerHTML = data.payload[i][1]
+			console.log(data.payload[i]);
+			document.getElementById("time" + i).innerHTML = data.payload[i].time;
+			document.getElementById("type" + i).innerHTML = 'type: ' + data.payload[i].type;
+			document.getElementById("adjPrio" + i).innerHTML = 'adj prio: ' + data.payload[i].ageAdjustedPrio;
+			document.getElementById("prio" + i).innerHTML = 'raw prio: ' + data.payload[i].prio;
 		}
 	})
 
