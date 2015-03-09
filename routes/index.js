@@ -25,7 +25,7 @@ var eventClient = influx({
 })
 //SQL query used for getting data from InluxDB
 var query = {
-	now: 'select * from "Testsites/MunktellSiencePark/mainmeter/meterevent" limit 1000',
+	now: 'select * from "Testsites/MunktellSiencePark/mainmeter/meterevent" where time > now() - 30m',
 	day: 'select mean(power) from "Testsites/MunktellSiencePark/mainmeter/meterevent" where time > now() - 1d group by time(1h)',
 	week: 'select mean(power) from "Testsites/MunktellSiencePark/mainmeter/meterevent" where time > now() - 7d group by time(1d)'
 }
@@ -41,8 +41,13 @@ var ageingFactors = {
 module.exports = function(ioObj){
 	io = ioObj;
 
-	/* GET home page. */
-	router.get('/:chartType?', function(req, res) {
+	//Redirect to realtime view
+	router.get('/', function(req, res) {
+	  res.redirect('/views/now');
+	});
+
+	/* GET page for different chartTypes. */
+	router.get('/views/:chartType?', function(req, res) {
 
 		//check what resolution is shown for the graph
 	  	var chartType 	= req.params.chartType || 'now';
