@@ -7,7 +7,7 @@
 - Showing prioritized events of consumption
 
 ## Demo
-<img src="http://i.imgur.com/uMCGLJE.gif" alt="Kontextuell energivisualisering demo">
+<img src="http://imgur.com/TiKhaV8.gif" alt="Kontextuell energivisualisering demo">
 
 ## Installation
 
