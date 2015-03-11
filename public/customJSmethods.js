@@ -18,7 +18,10 @@ var averagePoints = [{
 		x: null,
 		y: null
 	}];
-
+/*
+  removeMarker (max/min) if new max/min has been detected
+  IN: pos - position of old max/min point in graph 
+*/
 function removeMarker(pos)
 {
 	// First found min/max it tries removing markers on "prev" objects that do not exist. Lets not.
@@ -40,7 +43,11 @@ function removeMarker(pos)
 		y: dataPoints1[pos].y
 	}
 }
-
+/*
+ pushData pushes new data to graph and update average calculation
+ IN: timestamp - x value in graph
+ IN: power - y value in graph
+*/
 function pushData(timestamp, power)
 {
 	dataPoints1.push({
@@ -50,7 +57,13 @@ function pushData(timestamp, power)
 
 	updateAverage();
 }
-
+/*
+ pushMarkerData pushes new data as max or min point
+ IN: timestamp - x value in graph
+ IN: power - y value in graph
+ IN: type - type of marker (ex. triangle for max, square for min)
+ IN: color - color of marker (ex. green for min, red for max)
+*/
 function pushMarkerData(timestamp, power, type, color)
 {
 	dataPoints1.push({
@@ -64,7 +77,11 @@ function pushMarkerData(timestamp, power, type, color)
 
 	updateAverage();
 }
-
+/*
+ updateMax updates new max marker 
+ IN: timestamp - x value in graph
+ IN: power - y value in graph
+*/
 function updateMax(timestamp, power)
 {
 	// Push the new data, with marker
@@ -77,7 +94,11 @@ function updateMax(timestamp, power)
 	max.val = power;
 	max.arraypos = dataPoints1.length-1;	// point to (last) pushed element (0 indexed)
 }
-
+/*
+ updateMin updates new min marker 
+ IN: timestamp - x value in graph
+ IN: power - y value in graph
+*/
 function updateMin(timestamp, power)
 {
 	// Push the new data, with marker
@@ -90,7 +111,9 @@ function updateMin(timestamp, power)
 	min.val = power;
 	min.arraypos = dataPoints1.length-1;	// point to (last) pushed element (0 indexed)
 }
-
+/*
+ updateAverage calculates the average value in the graph and updates its marker
+*/
 function updateAverage()
 {
 	// Add the newly pushed value to total
@@ -110,15 +133,15 @@ function updateAverage()
 	averagePoints[1].x = dataPoints1[dataPoints1.length-1].x;
 }
 
-//
+/*
+ Method for adjusting the average calculation
+*/
 function adjustAverage(){
 	var totalNew 	= averagePoints[0].y * dataPoints1.length;
-	//console.log('A: ' + String(totalNew) + ', oldavg: ' + averagePoints[0].y);
+	
 	totalNew 	-= dataPoints1[0].y;
 	total = totalNew;
 
-	//console.log('B: ' + total + ', newavg: ' + Math.round(total / (dataPoints1.length - 1)));
-	//console.log(typeof(dataPoints1[0].y));
 	var average = Math.round(total / (dataPoints1.length - 1));
 	averagePoints[0].y = average;
 	averagePoints[1].y = average;
@@ -199,6 +222,7 @@ window.onload = function() {
 	chart.options.data[0].legendText = serieNames[0] + ": " + power + " W";
 	chart.options.data[1].legendText = serieNames[1] + ": " + averagePoints[1].y + " W";
 
+	//Change interval on x-axis (day/hour) depending on current showing view (realtime, day, week)
 	if(view == "week"){
 		chart.options.axisX.intervalType = "day";
 	}
@@ -231,10 +255,11 @@ window.onload = function() {
 			else if (power < min.val)	updateMin(time, power);
 			else 						pushData(time, power);
 
+			//Adjust the average calculation after adding and remove oldest point via shifting
 			adjustAverage();
 			dataPoints1.shift();
 			
-
+			//Update legendtext
 			chart.options.data[0].legendText = serieNames[0] + ": " + power + " W";
 			chart.options.data[1].legendText = serieNames[1] + ": " + averagePoints[1].y + " W";
 
@@ -249,16 +274,13 @@ window.onload = function() {
 		}
 	});
 	socket.on('event', function(data){
+		//On new priorityCard-event, update information in the prioritycards
 		for(var i = 0; i < 4; i++){
-			//if(prevCards[i].id === data.payload[i].sequenceNo)
 			if(!(parseInt($(".priorityCard")[i].id) === data.payload[i].sequenceNo)){
 				document.getElementById("type" + i).innerHTML = data.payload[i].type;
 				document.getElementById("date" + i).innerHTML = data.payload[i].date;
 				document.getElementById("time" + i).innerHTML = data.payload[i].time;
 				document.getElementById("value" + i).innerHTML = 'Value: ' + data.payload[i].value + ' W';
-				//ANIMATION FOR NEW PRIORITY CARD!!
-				//$.noConflict();
-				//$($(document).find(".priorityCard")[i]).effect("bounce", "slow");
 			}
 		}
 	})

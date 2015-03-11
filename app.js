@@ -3,7 +3,9 @@ var mqtt 	= require('mqtt');			//Used for subscribing to MQTT-broakers
 
 var express = require('express');		//Express.js web-framwork 
 var app 	= express();
-var port 	= 8000;
+var port 	= 8000;						//Port used for connection to web server
+
+//Makes server listen to defined port
 var server = app.listen(port, function(){
 	console.log('listening on port ' + port);
 });
@@ -12,6 +14,7 @@ var server = app.listen(port, function(){
 var io 			= socket.listen(server);
 var routeData 	= require('./routes/index')(io);		//Require routes from
 
+//Settings used for express web framwork
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');	
 app.locals.pageTitle = "Energy context awareness";
@@ -42,6 +45,7 @@ app.use(function(err, req, res, next) {
     });
 });
 
+//Socket.io handler
 io.on('connection', function(socket){
 	console.log('user connected');
 
@@ -49,6 +53,7 @@ io.on('connection', function(socket){
 	socket.mqtt = mqtt.connect('mqtt://op-en.se:1883');
 	socket.mqtt.subscribe('#');
 	
+	//Redirect mqtt messages via socket.io (mqtt topic)
 	socket.mqtt.on('message', function(topic, message){
 		io.sockets.emit('mqtt',{'topic':String(topic),'payload':String(message)});
 	});

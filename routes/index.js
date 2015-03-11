@@ -1,9 +1,13 @@
-var express = require('express');
+var express = require('express');		//Express libary, used as web framework
 var influx 	= require('influx');		//Libary used for connection with the influx database
-var router = express.Router();
-var pendingDBrequest = false; 
 var strftime = require('strftime');
 
+var router = express.Router();			
+var pendingDBrequest = false; 
+var io;
+var priorityUpdates;
+
+//Settings for client connection to database Munktell in InfluxDB
 var client 	= influx({
 	host: 'localhost',
 	port: 8086,
@@ -11,6 +15,7 @@ var client 	= influx({
 	password: 'root',
 	database: 'Munktell'
 })
+//Settings for client connection to database grupp5 in InfluxDB 
 var eventClient = influx({
 	host: 'localhost',
 	port: 8086,
@@ -18,15 +23,12 @@ var eventClient = influx({
 	password: 'root',
 	database: 'grupp5'
 })
-var priorityUpdates;
-
 //SQL query used for getting data from InluxDB
 var query = {
 	now: 'select * from "Testsites/MunktellSiencePark/mainmeter/meterevent" where time > now() - 30m',
 	day: 'select mean(power) from "Testsites/MunktellSiencePark/mainmeter/meterevent" where time > now() - 1d group by time(1h)',
 	week: 'select mean(power) from "Testsites/MunktellSiencePark/mainmeter/meterevent" where time > now() - 7d group by time(1d)'
 }
-
 //ageingFactor is used to calculate age-adjusted priorities
 //A priority has a linear decline per minute in its priority.
 //The ageing factor stands for the number of points per minute lost.
@@ -35,13 +37,17 @@ var ageingFactors = {
 	day: 0.00138889, 	//one point lost per 12h
 	week: 0.00023148 	//one point lost per 3d
 }
-var io;
 
 module.exports = function(ioObj){
 	io = ioObj;
 
-	/* GET home page. */
-	router.get('/:chartType?', function(req, res) {
+	//Redirect to realtime view
+	router.get('/', function(req, res) {
+	  res.redirect('/views/now');
+	});
+
+	/* GET page for different chartTypes. */
+	router.get('/views/:chartType?', function(req, res) {
 
 		//check what resolution is shown for the graph
 	  	var chartType 	= req.params.chartType || 'now';
@@ -59,7 +65,7 @@ module.exports = function(ioObj){
 
 			//Fetch event data from influxDB
 			//TODO: limit events fetched
-			eventClient.query('select * from "events"', function(err, eventData){
+			eventClient.query('select * from "events" limit 100', function(err, eventData){
 				if(err!=null){
 					res.send('there was an error\n');
 					console.log(err);
