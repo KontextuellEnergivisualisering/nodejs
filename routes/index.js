@@ -1,6 +1,6 @@
 var express = require('express');		//Express libary, used as web framework
 var influx 	= require('influx');		//Libary used for connection with the influx database
-var strftime = require('strftime');
+var strftime = require('strftime');		//Library used for cleaner formatting of time to strings
 
 var router = express.Router();			
 var pendingDBrequest = false; 
@@ -8,6 +8,7 @@ var io;
 var priorityUpdates;
 
 //Settings for client connection to database Munktell in InfluxDB
+//this database contains meter data from main meter at Munktell
 var client 	= influx({
 	host: 'localhost',
 	port: 8086,
@@ -15,7 +16,8 @@ var client 	= influx({
 	password: 'root',
 	database: 'Munktell'
 })
-//Settings for client connection to database grupp5 in InfluxDB 
+//Settings for client connection to database grupp5 in InfluxDB
+//this database contains event data from python priority scripts 
 var eventClient = influx({
 	host: 'localhost',
 	port: 8086,
@@ -53,6 +55,9 @@ module.exports = function(ioObj){
 	  	var chartType 	= req.params.chartType || 'now';
 	  	var dbPowerCol 	= chartType == 'now' ? 'power' : 'mean';
 
+	  	//if chart type is not realtime:
+	  	//kill timer that updates the presentation of the prioritized events
+	  	//(only realtime loads new data to graph, so no new events can occur for others) 
 		if(chartType !== 'now')
 			clearInterval(priorityUpdates)
 
@@ -64,13 +69,17 @@ module.exports = function(ioObj){
 			};
 
 			//Fetch event data from influxDB
-			//TODO: limit events fetched
+			//TODO: smarter limit for events fetched!
+			//Right now this only uses a static limit of the 100 most recently occured
+			//This can potentially miss important events that are beyond that limit. 
 			eventClient.query('select * from "events" limit 100', function(err, eventData){
 				if(err!=null){
 					res.send('there was an error\n');
 					console.log(err);
 				}
 
+				//If graph is showing real time data:
+				//Set a timer to update presentation of priority cards every 10s
 				if(chartType == 'now')
 					priorityUpdates = setInterval(function(){updatePriorityCards(chartType)}, 10000);
 
@@ -87,9 +96,13 @@ module.exports = function(ioObj){
 	return {router: router, eventClient: eventClient};
 }
 
-//TODO: emit only the 4 highest prioritized
-//Fetches priority events from influxDB and emits them age-weighted 
-//priority to the socket as an 'event' message.
+/*
+	if real time view is shown:
+	This method is called every 10s to keep presentation of priority cards up to date
+	TODO: emit only the 4 highest prioritized events, now emitting full series
+	Fetches priority events from influxDB and emits them age-weighted
+	priority to the socket as an 'event' message.
+*/
 function updatePriorityCards(chartType){
 	if(pendingDBrequest)
 		return;
@@ -99,7 +112,6 @@ function updatePriorityCards(chartType){
 		pendingDBrequest = false;
 
 		if(err!=null){
-			//TODO: Improve this error handling
 			console.log('there was an error');
 		}else{
 			io.sockets.emit('event',{'topic':'testEvent','payload':prioritizedData(data[0], chartType)});	
@@ -120,7 +132,7 @@ function prioritizedData(eventData, chartType){
 	return events;
 }
 
-//FOR PRIORITY EVENTS
+//FOR PRIORITY EVENTS: build object to be presented
 //influxDB data does is not sent with consistent column indices (except for sequence no and time).
 //Check which column correspond to event type and priority, and use these indices when extracting data.	
 function timeTypeAndPriorityForEvents(influxData, ageFactor){
@@ -149,7 +161,7 @@ function timeTypeAndPriorityForEvents(influxData, ageFactor){
 	});
 }
 
-//FOR POWER CONSUMPTION
+//FOR POWER CONSUMPTION: build object to be presented
 //influxDB data does is not sent with consistent column indices (except for sequence no and time).
 //First check which column correspond to power, and use this index when extracting data.	
 function timeAndPower(influxData, colName){

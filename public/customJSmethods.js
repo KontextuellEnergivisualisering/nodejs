@@ -134,7 +134,10 @@ function updateAverage()
 }
 
 /*
- Method for adjusting the average calculation
+	Method for adjusting the average calculation
+	1. calculate sum of y values for all points,
+	2. reduce sum by y value of the point that will be removed
+	3. calculate and set new average
 */
 function adjustAverage(){
 	var totalNew 	= averagePoints[0].y * dataPoints1.length;
